@@ -1,40 +1,42 @@
 #lang racket
-(require minikanren)
+; (require minikanren)
 ; (require Racket-miniKanren/miniKanren/mk)
-(define succeed (== #t #t))
-(define fail (== #t #f))
-(define else succeed)
+(require "trs2-impl.rkt") ; For 2nd Ed (e.g. conj2, ...etc)
 
-; Your code here ...
+; (define succeed (== #t #t))
+; (define fail (== #t #f))
+; (define else succeed)
 
-; (run 1 (x) (== x 6))
+;; The First Law -
+
+
+;; The Second Law - If x is fresh, then (== v x) succeeds and
+;;                  associates v with x, unless x occurs in v
 
 (println "Chapter 1 - Playthings")
 
-; p.17
-(run* (q) fail) ; '()
-(== 'pea 'pod)
+(println "p.17")
+(run* (q) fail)           ; -> ()
 
-; p.18
-(run* (q) (== 'pea 'pod))
-(run* (q) (== q 'pea))
-(run* (q) (== 'pea q))
+(println "p.18")
+(run* (q) (== 'pea 'pod)) ; -> ()
+(run* (q) (== q 'pea))    ; -> (pea)
+(run* (q) (== 'pea q))    ; -> (pea)
 
-; p.19
-(run* (q) (== 'pea q))
-(run* (q) succeed) ; `fresh`
+(println "p.19")
+(run* (q) succeed)        ; -> (_.0) `fresh`
 
-; p.20
-(run* (q) (== 'pea 'pea))  ; -> (_.0)
-(run* (q) (== q q))        ; -> (_.0)
+(println "p.20")
+(run* (q) (== 'pea 'pea)) ; -> (_.0)
+(run* (q) (== q q))       ; -> (_.0)
 (run* (q)
       (fresh (x)
-             (== 'pea q))) ; -> (pea)
+             (== 'pea q)))  ; -> (pea)
 (run* (q)
       (fresh (x)
-             (== 'pea x))) ; -> (_.0)
+             (== 'pea x)))  ; -> (_.0)
 
-; p.21
+(println "p.21")
 (run* (q)
       (fresh (x)
              (== (cons x '()) q))) ; -> ((_.0))
@@ -43,34 +45,52 @@
              (== `(,x) q)))        ; -> ((_.0))
 (run* (q)
       (fresh (x)
-             (== x q)))            ; `fuse` --> (_.0)
+             (== x q)))            ; --> (_.0) `fuse`
 
-; p.22
+(println "p.22")
 (run* (q)
-      (== '(((pea)) pod) '(((pea)) pod)))
+      (== '(((pea)) pod) '(((pea)) pod)))    ; -> (_.0)
 (run* (q)
-      (== '(((pea)) pod) `(((pea)) ,q)))
+      (== '(((pea)) pod) `(((pea)) ,q)))     ; -> (pod)
 (run* (q)
-      (== `(((,q)) pod) '(((pea)) pod)))
-(run* (q)
-      (fresh (x)
-             (== `(((,q)) pod) `(((,x)) pod))))
+      (== `(((,q)) pod) '(((pea)) pod)))     ; -> (pea)
 (run* (q)
       (fresh (x)
-             (== `(((,q)) ,x) `(((,x)) pod))))
+             (== `(((,q)) pod) `(((,x)) pod))))    ; -> (_.0)
 (run* (q)
       (fresh (x)
-             (== `(,x ,x) q)))
+             (== `(((,q)) ,x) `(((,x)) pod))))     ; -> (pod)
+(run* (q)
+      (fresh (x)
+             (== `(,x ,x) q)))                     ; -> ((_.0 _.0))
 (run* (q)
       (fresh (x)
              (fresh (y)
-                    (== `(,q ,y) `((,x ,y) ,x)))))
+                    (== `(,q ,y) `((,x ,y) ,x))))) ; -> ((_.0 _.0))
 
-; p.23 `different`
-(run* (q)
-      (fresh (x)
-             (== 'pea q)))
+(println "p.23")
 (run* (q)
       (fresh (x)
              (fresh (y)
-                    (== `(,x ,y) q))))
+                    (== `(,x ,y) q))))  ; -> ((_.0 _.1))
+(run* (s)
+      (fresh (t)
+             (fresh (u)
+                    (== `(,t ,u) s))))  ; -> ((_.0 _.1))
+
+(run* (q)
+      (fresh (x)
+             (fresh (y)
+                    (== `(,x ,y ,x) q)))) ; -> ((_.0 _.1 _.0))
+
+(run* (q)
+      (fresh (x)
+             (== `(,x) x))) ; -> ()
+
+(println "p.24")
+(run* (q)
+      (conj2 succeed succeed))
+
+(println "p.25")
+(println "p.26")
+(println "p.27")
